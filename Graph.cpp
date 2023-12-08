@@ -96,4 +96,98 @@ void Graph::displayGraph() {
     std::cout << std::endl;
 }
 
+vector<string> Graph::dijkstraPath(const string &_startNode, const string &_endNode) {
+    resetGraph();
+    vector<string> results;
 
+    vector<Node*> closed;
+    vector<Node*> open = nodeList;
+    Node* startNode = getNodeByName(_startNode);
+    Node* endNode = getNodeByName(_endNode);
+    Node* currentNode = nullptr;
+
+    startNode->cumulativeCost = 0;
+    int currentPathValue = 0;
+
+    auto it = std::find(closed.begin(), closed.end(), endNode);
+    while (it == closed.end()) {
+        int minPathValue = INT_MAX;
+        for (const auto& node: open) {
+            currentPathValue = node->cumulativeCost;
+            if (currentPathValue < minPathValue) {
+                currentNode = node;
+                minPathValue = currentPathValue;
+            }
+        }
+
+        open.erase(std::find(open.begin(), open.end(), currentNode));
+        closed.push_back(currentNode);
+
+        int combinedPathValue;
+        if (currentNode != endNode){
+            for (const auto& neighbourPair: currentNode->neighbours) {
+                Node* neighbourNode = neighbourPair.first;
+                if (std::find(open.begin(), open.end(), neighbourNode) != open.end()) {
+                    int edgeWeight = neighbourPair.second;
+                    combinedPathValue = currentNode->cumulativeCost + edgeWeight;
+                    if (combinedPathValue < neighbourNode->cumulativeCost) {
+                        neighbourNode->cumulativeCost = combinedPathValue;
+                        neighbourNode->previous = currentNode;
+                    }
+                }
+            }
+        }
+        it = std::find(closed.begin(), closed.end(), endNode);
+    }
+
+    currentNode = endNode;
+    while (currentNode != nullptr) {
+        results.push_back(currentNode->name);
+        currentNode = currentNode->previous;
+    }
+
+    std::reverse(results.begin(), results.end());
+    return results;
+}
+
+vector<string> Graph::breadthFirstSearch() {
+    vector<string> results;
+    std::queue<Node*> queue;
+    queue.push(nodeList[0]);
+
+    while (!queue.empty()) {
+        Node* currentNode = queue.front();
+        queue.pop();
+
+        string currentNodeName = currentNode->name;
+        auto it = std::find(results.begin(), results.end(), currentNodeName);
+        if (it == results.end()) {
+            results.push_back(currentNodeName);
+            for (const auto& neighbour: currentNode->neighbours) {
+                queue.push(neighbour.first);
+            }
+        }
+    }
+    return results;
+}
+
+vector<string> Graph::depthFirstSearch() {
+    vector<string> results;
+    std::stack<Node*> stack;
+    stack.push(nodeList[0]);
+
+    while (!stack.empty()) {
+        Node* currentNode = stack.top();
+        stack.pop();
+
+        string currentNodeName = currentNode->name;
+        auto it = std::find(results.begin(), results.end(), currentNodeName);
+        if (it == results.end()) {
+            results.push_back(currentNodeName);
+            for (const auto& neighbour: currentNode->neighbours) {
+                stack.push(neighbour.first);
+            }
+        }
+    }
+    return results;
+}

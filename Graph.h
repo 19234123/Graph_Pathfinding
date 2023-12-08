@@ -6,6 +6,9 @@
 #include <map>
 #include <cmath>
 #include <limits>
+#include <stack>
+#include <queue>
+#include <algorithm>
 
 using std::string;
 using std::vector;
@@ -42,6 +45,9 @@ public:
     void addEdge(const string& nodeS1, const string& nodeS2, int weight);
     void displayGraph();
 
+    vector<string> breadthFirstSearch();
+    vector<string> depthFirstSearch();
+    vector<string> dijkstraPath(const string& _startNode, const string& _endNode);
 };
 
 

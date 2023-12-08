@@ -37,5 +37,11 @@ int main() {
     graph->addEdge("Bath", "Reading", 65);
 
     graph->displayGraph();
+
+    auto nameList = graph->dijkstraPath("Oxford", "Plymouth");
+    for (const auto& name: nameList){
+        std::cout << name << std::endl;
+    }
+
     return 0;
 }
