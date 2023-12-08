@@ -31,12 +31,13 @@ private:
     };
 
 private:
-    vector<Node> nodeList {};
+    vector<Node*> nodeList {};
     void resetGraph();
     Node* getNodeByName(const string& name);
 
 public:
-    void addNode(const Node& node);
+    void addNode(const string& name, int x, int y);
+    void addNode(Node* node);
     static void addEdge(Node* node1, Node* node2, int weight);
     void addEdge(const string& nodeS1, const string& nodeS2, int weight);
     void displayGraph();

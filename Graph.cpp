@@ -7,7 +7,6 @@ Graph::Node::Node(const string &name, int x, int y) {
     this->name = name;
     this->x = x;
     this->y = y;
-
 }
 
 void Graph::Node::calculateDistanceToTarget(int targetX, int targetY) {
@@ -36,16 +35,21 @@ void Graph::Node::resetNode() {
     this->estimatedCost = std::numeric_limits<double>::infinity();
 }
 
+
 /**
  * Graph
  */
 void Graph::resetGraph() {
     for (auto& node: nodeList){
-        node.resetNode();
+        node->resetNode();
     }
 }
 
-void Graph::addNode(const Graph::Node& node) {
+void Graph::addNode(const string &name, int x, int y) {
+    addNode(new Node(name, x, y));
+}
+
+void Graph::addNode(Graph::Node* node) {
     nodeList.push_back(node);
 }
 
@@ -58,12 +62,12 @@ void Graph::addEdge(const string& nodeS1, const string& nodeS2, int weight) {
     Node* node1 = nullptr;
     Node* node2 = nullptr;
 
-    for (auto node: nodeList) {
-        string currentNodeName = node.name;
+    for (auto& node: nodeList) {
+        string currentNodeName = node->name;
         if (currentNodeName == nodeS1) {
-            node1 = &node;
+            node1 = node;
         } else if (currentNodeName == nodeS2) {
-            node2 = &node;
+            node2 = node;
         }
     }
 
@@ -74,8 +78,8 @@ void Graph::addEdge(const string& nodeS1, const string& nodeS2, int weight) {
 
 Graph::Node* Graph::getNodeByName(const string& name) {
     for (auto& node: nodeList) {
-        if (name == node.name) {
-            return &node;
+        if (name == node->name) {
+            return node;
         }
     }
     return nullptr;
@@ -83,8 +87,8 @@ Graph::Node* Graph::getNodeByName(const string& name) {
 
 void Graph::displayGraph() {
     for (const auto& node: nodeList) {
-        string nodeDetails = node.name + ": ";
-        for (const auto& pair: node.neighbours) {
+        string nodeDetails = node->name + ": ";
+        for (const auto& pair: node->neighbours) {
             nodeDetails += pair.first->name + ", ";
         }
         std::cout << nodeDetails << std::endl;
@@ -92,17 +96,4 @@ void Graph::displayGraph() {
     std::cout << std::endl;
 }
 
-/**
-*     public void displayGraph(){
-        for (Node node: nodes){
-            StringBuilder nodeDetails = new StringBuilder(node.getName() + ": ");
-            for (Node neighbour: node.getNeighbours().keySet()){
-                nodeDetails.append(neighbour.getName()).append(", ");
-            }
-            System.out.println(nodeDetails);
-        }
-        System.out.println();
-    }
-}
-*/
 
