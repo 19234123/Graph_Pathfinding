@@ -17,20 +17,20 @@ class Graph {
 private:
     class Node {
     public:
-    string name;
-    std::map<Node*, int> neighbours {};
-    int x;
-    int y;
-    int cumulativeCost = INT_MAX;
-    double distanceToTarget = std::numeric_limits<double>::infinity();
-    double estimatedCost = std::numeric_limits<double>::infinity();
-    Graph::Node* previous = nullptr;
+        string name;
+        std::map<Node*, int> neighbours {};
+        int x, y;
+        int cumulativeCost = INT_MAX;
+        double distanceToTarget = std::numeric_limits<double>::infinity();
+        double estimatedCost = std::numeric_limits<double>::infinity();
+        Graph::Node* previous = nullptr;
 
-    Node(const string& name, int x, int y);
-    void calculateDistanceToTarget(int targetX, int targetY);
-    void addNeighbour(Node* node, int weight);
-    bool operator<(const Node& other) const;
-    void resetNode();
+        Node(const string& name, int x, int y);
+        double calculateDistanceToTarget(int targetX, int targetY);
+        void calculateEstimatedCost();
+        void addNeighbour(Node* node, int weight);
+        bool operator<(const Node& other) const;
+        void resetNode();
     };
 
 private:
@@ -48,7 +48,7 @@ public:
     vector<string> breadthFirstSearch();
     vector<string> depthFirstSearch();
     vector<string> dijkstraPath(const string& _startNode, const string& _endNode);
+    vector<string> aStarPath(const string& _startNode, const string& _endNode);
 };
-
 
 #endif //GRAPHPATHFINDING_GRAPH_H

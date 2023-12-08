@@ -38,7 +38,7 @@ int main() {
 
     graph->displayGraph();
 
-    auto nameList = graph->dijkstraPath("Oxford", "Plymouth");
+    auto nameList = graph->aStarPath("Oxford", "Plymouth");
     for (const auto& name: nameList){
         std::cout << name << std::endl;
     }

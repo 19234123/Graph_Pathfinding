@@ -9,12 +9,13 @@ Graph::Node::Node(const string &name, int x, int y) {
     this->y = y;
 }
 
-void Graph::Node::calculateDistanceToTarget(int targetX, int targetY) {
+double Graph::Node::calculateDistanceToTarget(int targetX, int targetY) {
     // 1 = source, 2 = destination
     // A* euclidean distance = Square root of ((x2 - x1)^2 + (y2 - y1)^2)
     double distanceX = pow((targetX - this->x), 2);
     double distanceY = pow((targetY - this->y), 2);
     distanceToTarget = sqrt(distanceX + distanceY);
+    return distanceToTarget;
 }
 
 void Graph::Node::addNeighbour(Graph::Node* node, int weight) {
@@ -33,6 +34,10 @@ void Graph::Node::resetNode() {
     this->cumulativeCost = INT_MAX;
     this->distanceToTarget = std::numeric_limits<double>::infinity();
     this->estimatedCost = std::numeric_limits<double>::infinity();
+}
+
+void Graph::Node::calculateEstimatedCost() {
+    this->estimatedCost = cumulativeCost + distanceToTarget;
 }
 
 
@@ -85,15 +90,65 @@ Graph::Node* Graph::getNodeByName(const string& name) {
     return nullptr;
 }
 
-void Graph::displayGraph() {
-    for (const auto& node: nodeList) {
-        string nodeDetails = node->name + ": ";
-        for (const auto& pair: node->neighbours) {
-            nodeDetails += pair.first->name + ", ";
+vector<string> Graph::aStarPath(const string &_startNode, const string &_endNode) {
+    resetGraph();
+    vector<string> results;
+
+    vector<Node*> closed;
+    vector<Node*> open = nodeList;
+    Node* startNode = getNodeByName(_startNode);
+    Node* endNode = getNodeByName(_endNode);
+    Node* currentNode = nullptr;
+    int endX = endNode->x;
+    int endY = endNode->y;
+
+    startNode->cumulativeCost = 0;
+
+    double currentPathValue = 0;
+    auto it = std::find(closed.begin(), closed.end(), endNode);
+    while (it == closed.end()) {
+        double minPathValue = std::numeric_limits<double>::infinity();
+        for (auto& node: open) {
+            if (node->distanceToTarget == std::numeric_limits<double>::infinity()) {
+                node->calculateDistanceToTarget(endX, endY);
+                node->calculateEstimatedCost();
+            }
+            currentPathValue = node->estimatedCost;
+            if (currentPathValue < minPathValue) {
+                currentNode = node;
+                minPathValue = currentPathValue;
+            }
         }
-        std::cout << nodeDetails << std::endl;
+
+        open.erase(std::find(open.begin(), open.end(), currentNode));
+        closed.push_back(currentNode);
+
+        int combinedPathValue;
+        if (currentNode != endNode){
+            for (const auto& neighbourPair: currentNode->neighbours) {
+                Node* neighbourNode = neighbourPair.first;
+                if (std::find(open.begin(), open.end(), neighbourNode) != open.end()) {
+                    int edgeWeight = neighbourPair.second;
+                    combinedPathValue = currentNode->cumulativeCost + edgeWeight;
+                    if (combinedPathValue < neighbourNode->cumulativeCost) {
+                        neighbourNode->cumulativeCost = combinedPathValue;
+                        neighbourNode->calculateEstimatedCost();
+                        neighbourNode->previous = currentNode;
+                    }
+                }
+            }
+        }
+        it = std::find(closed.begin(), closed.end(), endNode);
     }
-    std::cout << std::endl;
+
+    currentNode = endNode;
+    while (currentNode != nullptr) {
+        results.push_back(currentNode->name);
+        currentNode = currentNode->previous;
+    }
+
+    std::reverse(results.begin(), results.end());
+    return results;
 }
 
 vector<string> Graph::dijkstraPath(const string &_startNode, const string &_endNode) {
@@ -191,3 +246,16 @@ vector<string> Graph::depthFirstSearch() {
     }
     return results;
 }
+
+void Graph::displayGraph() {
+    for (const auto& node: nodeList) {
+        string nodeDetails = node->name + ": ";
+        for (const auto& pair: node->neighbours) {
+            nodeDetails += pair.first->name + ", ";
+        }
+        std::cout << nodeDetails << std::endl;
+    }
+    std::cout << std::endl;
+}
+
+
