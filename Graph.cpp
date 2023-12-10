@@ -3,10 +3,29 @@
 /**
  * Node
  */
-Graph::Node::Node(const string &name, int x, int y) {
-    this->name = name;
+Graph::Node::Node(int id, const vector<int> &state, int x, int y) {
+    this->id = id;
+    this->state = state;
     this->x = x;
     this->y = y;
+    this->coordinates = std::make_pair(x, y);
+    setNodeStrings();
+}
+
+void Graph::Node::setNodeStrings() {
+    for (int i: state) {
+        this->asciiStateString += static_cast<char>(i);
+    }
+
+    string formattedState = "{";
+    for (int i=0; i<state.size(); i++) {
+        formattedState += static_cast<char>(state[i]);
+        if (i != state.size()-1) {
+            formattedState += ", ";
+        }
+    }
+    formattedState += "}";
+    this->formattedStateString = formattedState;
 }
 
 double Graph::Node::calculateDistanceToTarget(int targetX, int targetY) {
@@ -18,6 +37,10 @@ double Graph::Node::calculateDistanceToTarget(int targetX, int targetY) {
     return distanceToTarget;
 }
 
+void Graph::Node::calculateEstimatedCost() {
+    this->estimatedCost = cumulativeCost + distanceToTarget;
+}
+
 void Graph::Node::addNeighbour(Graph::Node* node, int weight) {
     auto it = neighbours.find(node);
     if (it == neighbours.end()) {
@@ -26,7 +49,7 @@ void Graph::Node::addNeighbour(Graph::Node* node, int weight) {
 }
 
 bool Graph::Node::operator<(const Graph::Node &other) const {
-    return name < other.name;
+    return state < other.state;
 }
 
 void Graph::Node::resetNode() {
@@ -36,26 +59,77 @@ void Graph::Node::resetNode() {
     this->estimatedCost = std::numeric_limits<double>::infinity();
 }
 
-void Graph::Node::calculateEstimatedCost() {
-    this->estimatedCost = cumulativeCost + distanceToTarget;
-}
-
 
 /**
  * Graph
  */
+Graph::~Graph() {
+    for (Node* node: nodeList) {
+        delete node;
+    }
+}
+
 void Graph::resetGraph() {
     for (auto& node: nodeList){
         node->resetNode();
     }
 }
 
-void Graph::addNode(const string &name, int x, int y) {
-    addNode(new Node(name, x, y));
+void Graph::displayGraphAsString() {
+    for (const auto& node: nodeList) {
+        cout << node->asciiStateString << endl;
+        cout << "Neighbours: ";
+        for (const auto& pair: node->neighbours) {
+            cout << pair.first->asciiStateString + ", ";
+        }
+        cout << endl << endl;
+    }
+    cout << endl;
 }
 
-void Graph::addNode(Graph::Node* node) {
-    nodeList.push_back(node);
+void Graph::displayGraphAsState() {
+    for (const auto& node: nodeList) {
+        string stateString = "State: ";
+        stateString += node->formattedStateString;
+        cout << stateString << endl;
+        cout << "Neighbours: ";
+        for (const auto& pair: node->neighbours) {
+            stateString.clear();
+            stateString += pair.first->formattedStateString;
+            cout << stateString << endl;
+        }
+        cout << endl << endl;
+    }
+    cout << endl;
+}
+
+Graph::Node *Graph::getNodeByAsciiValue(const string& nodeName) {
+    for (auto& node: nodeList) {
+        string currentNodeName = node->asciiStateString;
+        if (nodeName == currentNodeName) {
+            return node;
+        }
+    }
+    return nullptr;
+}
+
+
+/**
+ * addNode()
+ * addEdge()
+ */
+void Graph::addNode(const string& nodeValue, int x, int y) {
+    int id = static_cast<int>(nodeList.size());
+    vector<int> state;
+
+    for (char c: nodeValue) {
+        state.push_back(static_cast<int>(c));
+    }
+    nodeList.push_back(new Node(id, state, x, y));
+}
+
+void Graph::addNode(const string& nodeValue) {
+    addNode(nodeValue, 0, 0);
 }
 
 void Graph::addEdge(Node* node1, Node* node2, int weight) {
@@ -63,15 +137,19 @@ void Graph::addEdge(Node* node1, Node* node2, int weight) {
     node2->addNeighbour(node1, weight);
 }
 
-void Graph::addEdge(const string& nodeS1, const string& nodeS2, int weight) {
+void Graph::addEdge(Graph::Node* node1, Graph::Node* node2) {
+    addEdge(node1, node2, 1);
+}
+
+void Graph::addEdge(const string& nodeName1, const string& nodeName2, int weight) {
     Node* node1 = nullptr;
     Node* node2 = nullptr;
 
     for (auto& node: nodeList) {
-        string currentNodeName = node->name;
-        if (currentNodeName == nodeS1) {
+        string currentNodeName = node->asciiStateString;
+        if (currentNodeName == nodeName1) {
             node1 = node;
-        } else if (currentNodeName == nodeS2) {
+        } else if (currentNodeName == nodeName2) {
             node2 = node;
         }
     }
@@ -81,13 +159,55 @@ void Graph::addEdge(const string& nodeS1, const string& nodeS2, int weight) {
     }
 }
 
-Graph::Node* Graph::getNodeByName(const string& name) {
-    for (auto& node: nodeList) {
-        if (name == node->name) {
-            return node;
+void Graph::addEdge(const string &nodeName1, const string &nodeName2) {
+    addEdge(nodeName1, nodeName2, 1);
+}
+
+
+/**
+ * Pathfinding algorithms
+ */
+
+vector<string> Graph::breadthFirstSearch() {
+    vector<string> results;
+    std::queue<Node*> queue;
+    queue.push(nodeList[0]);
+
+    while (!queue.empty()) {
+        Node* currentNode = queue.front();
+        queue.pop();
+
+        string currentNodeName = currentNode->asciiStateString;
+        auto it = std::find(results.begin(), results.end(), currentNodeName);
+        if (it == results.end()) {
+            results.push_back(currentNodeName);
+            for (const auto& neighbour: currentNode->neighbours) {
+                queue.push(neighbour.first);
+            }
         }
     }
-    return nullptr;
+    return results;
+}
+
+vector<string> Graph::depthFirstSearch() {
+    vector<string> results;
+    std::stack<Node*> stack;
+    stack.push(nodeList[0]);
+
+    while (!stack.empty()) {
+        Node* currentNode = stack.top();
+        stack.pop();
+
+        string currentNodeName = currentNode->asciiStateString;
+        auto it = std::find(results.begin(), results.end(), currentNodeName);
+        if (it == results.end()) {
+            results.push_back(currentNodeName);
+            for (const auto& neighbour: currentNode->neighbours) {
+                stack.push(neighbour.first);
+            }
+        }
+    }
+    return results;
 }
 
 vector<string> Graph::aStarPath(const string &_startNode, const string &_endNode) {
@@ -96,8 +216,8 @@ vector<string> Graph::aStarPath(const string &_startNode, const string &_endNode
 
     vector<Node*> closed;
     vector<Node*> open = nodeList;
-    Node* startNode = getNodeByName(_startNode);
-    Node* endNode = getNodeByName(_endNode);
+    Node* startNode = getNodeByAsciiValue(_startNode);
+    Node* endNode = getNodeByAsciiValue(_endNode);
     Node* currentNode = nullptr;
     int endX = endNode->x;
     int endY = endNode->y;
@@ -143,7 +263,7 @@ vector<string> Graph::aStarPath(const string &_startNode, const string &_endNode
 
     currentNode = endNode;
     while (currentNode != nullptr) {
-        results.push_back(currentNode->name);
+        results.push_back(currentNode->asciiStateString);
         currentNode = currentNode->previous;
     }
 
@@ -157,8 +277,8 @@ vector<string> Graph::dijkstraPath(const string &_startNode, const string &_endN
 
     vector<Node*> closed;
     vector<Node*> open = nodeList;
-    Node* startNode = getNodeByName(_startNode);
-    Node* endNode = getNodeByName(_endNode);
+    Node* startNode = getNodeByAsciiValue(_startNode);
+    Node* endNode = getNodeByAsciiValue(_endNode);
     Node* currentNode = nullptr;
 
     startNode->cumulativeCost = 0;
@@ -197,65 +317,10 @@ vector<string> Graph::dijkstraPath(const string &_startNode, const string &_endN
 
     currentNode = endNode;
     while (currentNode != nullptr) {
-        results.push_back(currentNode->name);
+        results.push_back(currentNode->asciiStateString);
         currentNode = currentNode->previous;
     }
 
     std::reverse(results.begin(), results.end());
     return results;
 }
-
-vector<string> Graph::breadthFirstSearch() {
-    vector<string> results;
-    std::queue<Node*> queue;
-    queue.push(nodeList[0]);
-
-    while (!queue.empty()) {
-        Node* currentNode = queue.front();
-        queue.pop();
-
-        string currentNodeName = currentNode->name;
-        auto it = std::find(results.begin(), results.end(), currentNodeName);
-        if (it == results.end()) {
-            results.push_back(currentNodeName);
-            for (const auto& neighbour: currentNode->neighbours) {
-                queue.push(neighbour.first);
-            }
-        }
-    }
-    return results;
-}
-
-vector<string> Graph::depthFirstSearch() {
-    vector<string> results;
-    std::stack<Node*> stack;
-    stack.push(nodeList[0]);
-
-    while (!stack.empty()) {
-        Node* currentNode = stack.top();
-        stack.pop();
-
-        string currentNodeName = currentNode->name;
-        auto it = std::find(results.begin(), results.end(), currentNodeName);
-        if (it == results.end()) {
-            results.push_back(currentNodeName);
-            for (const auto& neighbour: currentNode->neighbours) {
-                stack.push(neighbour.first);
-            }
-        }
-    }
-    return results;
-}
-
-void Graph::displayGraph() {
-    for (const auto& node: nodeList) {
-        string nodeDetails = node->name + ": ";
-        for (const auto& pair: node->neighbours) {
-            nodeDetails += pair.first->name + ", ";
-        }
-        std::cout << nodeDetails << std::endl;
-    }
-    std::cout << std::endl;
-}
-
-
