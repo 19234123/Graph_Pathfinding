@@ -3,6 +3,11 @@ project(GraphPathfinding)
 
 set(CMAKE_CXX_STANDARD 17)
 
-add_executable(GraphPathfinding main.cpp
-        Graph.cpp
-        Graph.h)
+# Set the source files for the library
+set(SOURCE_FILES C:/Dev/Libraries/GraphPathfinding/Graph.cpp)
+
+# Create the library
+add_library(graph STATIC ${SOURCE_FILES})
+
+# Include directories for the library
+target_include_directories(graph PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include)
