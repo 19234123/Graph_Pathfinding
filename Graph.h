@@ -25,7 +25,7 @@ using std::pair;
  * adding edges, performing pathfinding algorithms, and displaying the graph.
  */
 class Graph {
-private:
+protected:
     /**
     * @class Node
     * @brief Represents a node in the graph.
@@ -38,7 +38,7 @@ private:
     public:
         int id;
         vector<int> state;
-        string asciiStateString {};
+        string asciiStateString;
         string formattedStateString;
         int x = 0;
         int y = 0;
@@ -58,7 +58,7 @@ private:
         void resetNode();
     };
 
-private:
+protected:
     vector<Node*> nodeList {};
 
     void resetGraph();
@@ -71,14 +71,14 @@ public:
     void addNode(const string& nodeValue, int x, int y);
     void addEdge(const string& nodeName1, const string& nodeName2, int weight);
     void addEdge(const string& nodeName1, const string& nodeName2);
-    void displayGraphAsString();
-    void displayGraphAsState();
+    virtual void displayGraphAsString();
+    virtual void displayGraphAsState();
     ~Graph();
 
-    vector<string> breadthFirstSearch();
-    vector<string> depthFirstSearch();
-    vector<string> aStarPath(const string &_startNode, const string &_endNode);
-    vector<string> dijkstraPath(const string& _startNode, const string& _endNode);
+    virtual vector<string> breadthFirstSearch();
+    virtual vector<string> depthFirstSearch();
+    virtual vector<string> aStarPath(const string &_startNode, const string &_endNode);
+    virtual vector<string> dijkstraPath(const string& _startNode, const string& _endNode);
 };
 
 #endif //GRAPHPATHFINDING_GRAPH_H
